@@ -35,18 +35,80 @@ int main(int argc,char* argv[]) {
 
 	// here we should have a valid input awaiting to to processed 
 
-	if (win == 1) {
-	
+ #ifdef WIN
+
+		SOCKET socket_;
+
+		int iResult;
+
+		iResult =  server_win_setup(argv[1],&socket_);
+
+		if (iResult != 0) {
+		
+		
+			wprintf("setup failed\n");
+		    
+		
+		}
+
+		if (iResult == 0) {
+			
+			
+			iResult = server_win_action(&socket_);
+
+			if (iResult != 0) {
+			
+				wprintf("functionality failed\n");
+			
+			}
+		
+		
+		}
+		WSACleanup();
+
 	
 	}
+#endif
+
+#ifdef UNIX
 
 	if (UNIX == 1) {
-	
-	
+
+
+		int socket_;
+
+		int iResult;
+
+		iResult = server_win_setup(argv[1], &socket_);
+
+		if (iResult != 0) {
+
+
+			wprintf("setup failed\n");
+
+
+		}
+
+		if (iResult == 0) {
+
+
+			iResult = server_win_action(&socket_);
+
+			if (iResult != 0) {
+
+				wprintf("functionality failed\n");
+
+			}
+
+
+		}
+
 	
 	
 	}
 
+
+#endif
 
 
 	return 0;
