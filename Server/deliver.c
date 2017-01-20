@@ -17,13 +17,15 @@ int main(int argc,char *argv[]){
 
 	//check if the port number is a number
 
-	char* udp = argv[1];
+
 	
-	for (;udp != NULL || udp!='\0'; udp = udp + 1) {
-	
-		if (!isdigit(*udp)) {
+	int checker = 0;
+	for (; checker < strlen(argv[2]); checker++ ) {
 		
-			printf("\nThe port must be an integer between %d to %d",UDP_PORT_LOW_RANGE,UDP_PORT_HIGH_RANGE);
+		// go through
+		if (!isdigit(argv[2][checker])) {
+	
+			printf("The port must be an integer between %d to %d",UDP_PORT_LOW_RANGE,UDP_PORT_HIGH_RANGE);
 			return 1;
 		
 		}
@@ -40,8 +42,13 @@ int main(int argc,char *argv[]){
 
 	}
 	
-
-	if(access(argv[1],F_OK) == -1){
+	char file[256];	
+	printf("ftp\n");
+	scanf("%s", file);
+	
+	printf(file);
+	
+	if(access(file,F_OK) == -1){
 		// means not equal to zero
 
 		printf("The file does not exist\n");
@@ -94,11 +101,12 @@ int main(int argc,char *argv[]){
 	char* recvMsg;
 	len = strlen(msg); 
 	
+	
 
 	//send the bytes 
 	bytes_send = send(socDesc, msg, len,0);
 
-	
+	printf("process test");
 	// receive the message?
 	bytes_receive = recv(socDesc,recvMsg,1000,0);
 
