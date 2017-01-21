@@ -1,8 +1,5 @@
 #pragma once
 
-#ifdef UNIX
-
-
 
 
 //telling what we are doing 
@@ -18,6 +15,14 @@
 #define MAX_PENDING_LINK 3
 
 
+// other necessary libraries for UNIX like system
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netdb.h>
+#include <arpa/inet.h>
+#include <netinet/in.h>
+
+
 // this function is responsible for setting up the UDP receiving socket
 int server_unix_setup(char* udp_port, int* udp_socket);
 
@@ -26,5 +31,5 @@ int server_unix_setup(char* udp_port, int* udp_socket);
 int server_unix_action(int* udp_socket);
 
 
-#endif
+#
 
