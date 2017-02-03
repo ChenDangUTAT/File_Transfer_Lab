@@ -1,6 +1,7 @@
 #include "deliver.h"
 
-
+char * processFile(char* fileName, struct packet* testPack, int *totalSize);
+char * processMsg(int* totalSize,struct packet* testPack,const char* totalFile);
 
 int main(int argc,char *argv[]){
 	// want to check the two inputs
@@ -42,11 +43,19 @@ int main(int argc,char *argv[]){
 
 	}
 	
-	char file[256];	
-	printf("ftp");
-	scanf("%s", file);
+	char file[256];
+    char type[4];
+
+	printf("Please enter the message follows by 'ftp <filename>' format\n");
+ 
+	scanf("%s%s",type, file);
 	
-	printf(file);
+    //check the correctness of ftp
+	if(strcmp(type,"ftp")!=0){
+		printf("Error, plese see the format!");
+		return 0;
+	}
+	
 	
 	
 	if(access(file,F_OK) == -1){
@@ -57,6 +66,11 @@ int main(int argc,char *argv[]){
 		
 	}
 	
+   /*-----------------get the file attributes------------*/
+   struct packet testPacket;
+	int totalSize;
+	char* totalFile;
+   totalFile = processFile(file,&testPacket,&totalSize);
 	/*------------------start of get addr-----------------*/
 	
 
@@ -74,8 +88,6 @@ int main(int argc,char *argv[]){
 	hints.ai_flags = AI_PASSIVE; // fill in IP for you 
 	//check if the status is correct
 	
-
-
 
 	//check for the error	
 	if((status = getaddrinfo(argv[1],argv[2],&hints,&res)) !=0){
@@ -103,38 +115,52 @@ int main(int argc,char *argv[]){
 	
 	//send!
 	int bytes_send,len,bytes_receive;
-	char* msg= "ftp";
+	
 
 	// you have to initalize the msg
 	char* recvMsg = malloc(sizeof(char) * 1024);
-	len = strlen(msg); 
- 
-	
-	
-	
-	
-	//send the bytes 
-	bytes_send = sendto(socDesc, msg, len,0,res->ai_addr,sizeof(struct sockaddr_storage ));
 
 	
-	// receive the message?
-	//read the text book man!
-	int fromLen = sizeof(struct sockaddr_storage);
+	/*----------set up the testPack, and send the first byte of data-----------*/
+	while(totalSize >0){
+  		
+		char* msg = processMsg(&totalSize,&testPacket,totalFile);
+	
+		//send the bytes 
+		bytes_send = sendto(socDesc, msg, strlen(msg)+1,0,res->ai_addr,sizeof(struct sockaddr_storage ));
+
+	
+		// receive the message?
+		//read the text book man!
+		int fromLen = sizeof(struct sockaddr_storage);
 
 
-	struct sockaddr from;
-	bytes_receive = recvfrom(socDesc,recvMsg,1000,0, &from, &fromLen);
-	printf("%s",recvMsg);
-	printf("The received byte is %d\n", bytes_receive);
+		struct sockaddr from;
 
-	// check if the return msg is yes,
-	if(strcmp( recvMsg, "Yes") == 0){
-		printf("A file transfer can start\n");
+		// define a clock to track the time
+		clock_t begin = clock();
+
+
+		bytes_receive = recvfrom(socDesc,recvMsg,1000,0, &from, &fromLen);
+		clock_t end = clock();
+
+		float time_spent = (float)(end - begin) / CLOCKS_PER_SEC;
 		
-	}
-	else{
-		printf("not succeed");
-	}
+		printf("%f\n",time_spent);
+
+	 
+		printf("%s",recvMsg);
+		printf("The received byte is %d\n", bytes_receive);
+
+		// check if the return msg is yes,
+		if(strcmp( recvMsg, "Yes") == 0){
+			printf("A file transfer can start\n");
+		
+		}
+		else{
+			printf("not succeed");
+		}
+}
 	// close the connection
 	close(socDesc);
 	// free address info
@@ -143,6 +169,72 @@ int main(int argc,char *argv[]){
 	return 0;
 
 	
+}
+
+char * processFile(char* fileName, struct packet* testPack, int *totalSize){ 
+
+ 	struct stat st;
+	FILE *f;
+   // does the initialization for the file content
+   stat(fileName,&st);
+
+   // get the size of file
+   *totalSize = st.st_size; 
+   f = fopen(fileName, "rb");
+   printf("%d\n", *totalSize);
+   char* totalFile = malloc(sizeof(char) *(*totalSize+1));
+  
+	//read the file contents into buffer
+   fread(totalFile, *totalSize, 1,f);
 
 
+   // set the attribute of testPack
+   printf("%s\n",totalFile);
+	testPack->total_frag = ceil(((double)*totalSize /1000));
+   printf("%d\n",testPack->total_frag);
+   testPack->frag_no =  0;
+   testPack->size = (unsigned int) *totalSize; 
+   testPack->filename  = fileName; 
+
+
+   return totalFile;
+ }  
+// process and return the new msg 
+char * processMsg(int* totalSize,struct packet* testPack,const char* totalFile){
+
+ 		char* msg= malloc(sizeof(char)*1048);
+		
+		if(*totalSize >1000){
+			testPack->size =1000;
+			*totalSize -=1000;
+			memcpy( testPack->filedata, &totalFile[(testPack->frag_no)*1000], 1000 );
+		}
+
+		// update the toatl Size each ru 
+      else{
+ 			testPack->size =*totalSize;
+			memcpy( testPack->filedata, &totalFile[(testPack->frag_no)*1000], *totalSize );
+			*totalSize = 0;
+			
+		}
+		testPack->frag_no ++;
+		char *temp = malloc(sizeof (20));
+		
+		sprintf(temp, "%d", testPack->total_frag);
+		strcat(msg,temp);
+		strcat(msg,":");
+		sprintf(temp, "%d", testPack->frag_no);
+		strcat(msg,temp);
+		strcat(msg,":");
+		sprintf(temp, "%d", testPack->size);
+		strcat(msg,temp);
+		strcat(msg,":");
+		strcat(msg,testPack->filename);
+		strcat(msg,":");
+		strcat(msg,testPack->filedata);
+		
+		
+      free(temp);
+		printf("%s\n",msg);
+		return msg;
 }
