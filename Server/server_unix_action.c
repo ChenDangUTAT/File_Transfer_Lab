@@ -137,7 +137,15 @@ int server_unix_action(int* udp_socket) {
     // whose maximum will be ACK999999999999
     char msg[12];
 
+	FILE* temp_;
+
     // initialization complete
+
+	// open a temporary file and allow write only
+
+	temp_  = fopen("temp","w");
+
+	char name[1024];
 
     do {
 
@@ -174,8 +182,8 @@ int server_unix_action(int* udp_socket) {
 
         } else {
             ACK = ACK + 1;
-            sprintf(msg, "ACK%d", ACK);
 
+            sprintf(msg, "ACK%d", ACK);
 
             int msg_sent_len = sendto(socket_, msg, strlen(msg), 0, &SenderAddr, sizeof (struct sockaddr_storage));
 
@@ -184,6 +192,13 @@ int server_unix_action(int* udp_socket) {
         }
 
         // do something to piece up the file
+
+		fwrite(packet.filedata,1,packet.size,temp_);
+
+		strcpy(name,packet.filename);
+
+
+
 
 #ifdef DEBUG
         printf("The received message is %s\n", packet.filedata);
@@ -196,6 +211,15 @@ int server_unix_action(int* udp_socket) {
 
 
     } while (ACK + 1 != packet.total_frag);
+
+	// rename with the last packet and close
+
+	rename("temp", name);
+
+	// close the file
+
+	fclose(temp_);
+
 
 
 
