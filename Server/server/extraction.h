@@ -13,6 +13,8 @@
 #pragma once 
 #include "packet.h"
 #include <malloc.h>
+#include <stdio.h>
+#include <string.h>
 
 #define MAX_NAME_SIZE 100
 

@@ -1,5 +1,4 @@
 #include "server_UNIX.h"
-#define DEBUG
 
 int server_unix_action(int* udp_socket) {
 
@@ -20,7 +19,7 @@ int server_unix_action(int* udp_socket) {
     section = 2;
 #endif
 
-    printf("This program hopefully function as described in SECTION %d\n",section);
+    printf("This program hopefully function as described in SECTION %d\n", section);
 
     // beginning
 
@@ -127,7 +126,7 @@ int server_unix_action(int* udp_socket) {
 
     struct packet packet;
     //initialize the first ACK number
-    int ACK = -1;
+    int ACK = 0;
 
     char msg_string[BUFFER_SIZE];
 
@@ -137,15 +136,15 @@ int server_unix_action(int* udp_socket) {
     // whose maximum will be ACK999999999999
     char msg[12];
 
-	FILE* temp_;
+    FILE* temp_;
 
     // initialization complete
 
-	// open a temporary file and allow write only
+    // open a temporary file and allow write only
 
-	temp_  = fopen("temp","w");
+    temp_ = fopen("temp", "wb+");
 
-	char name[1024];
+    char name[1024];
 
     do {
 
@@ -176,7 +175,10 @@ int server_unix_action(int* udp_socket) {
             sprintf(msg, "ACK%d", ACK);
 
             int msg_sent_len = sendto(socket_, msg, strlen(msg), 0, &SenderAddr, sizeof (struct sockaddr_storage));
-
+            
+            free(packet.filename);
+            
+            
             continue;
 
 
@@ -190,19 +192,42 @@ int server_unix_action(int* udp_socket) {
             // send ACK 
 
         }
+        
+        // NULL Pointer Check
+#ifdef NULLDEBUG
 
+        unsigned i;
+        for (i = 0; i < packet.size;i++){
+        
+            if(packet.filedata[i]== '\0'){
+            
+                printf("There is a null character in received packet %d\n",packet.frag_no);
+            
+            
+            }
+        
+        
+        
+        }
+
+
+
+
+#endif
+
+        
         // do something to piece up the file
+        
+        
+        
 
-		fwrite(packet.filedata,1,packet.size,temp_);
+        fwrite(packet.filedata, sizeof(char),packet.size, temp_);
 
-		strcpy(name,packet.filename);
-
-
+        strcpy(name, packet.filename);
 
 
 #ifdef DEBUG
         printf("The received message is %s\n", packet.filedata);
-
 #endif
 
 
@@ -210,15 +235,21 @@ int server_unix_action(int* udp_socket) {
         free(packet.filename);
 
 
-    } while (ACK + 1 != packet.total_frag);
+    } while (ACK != packet.total_frag);
 
-	// rename with the last packet and close
+    // rename with the last packet and close
 
-	rename("temp", name);
+    rename("temp", name);
 
-	// close the file
+    // close the file
 
-	fclose(temp_);
+    if(fclose(temp_)==0){
+        printf("The file is successful created \n");
+    }else{
+    
+        printf("The fclose has encountered error \n %s \n",strerror(errno));
+    
+    }
 
 
 

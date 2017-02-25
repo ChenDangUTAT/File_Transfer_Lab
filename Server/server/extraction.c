@@ -5,7 +5,6 @@
  */
 
 #include "extraction.h"
-#define DEBUG
 
 void extraction(char* msg_string, struct packet* packet) {
     // extract total_frag
@@ -53,7 +52,7 @@ void extraction(char* msg_string, struct packet* packet) {
 
 #ifdef DEBUG
 
-    printf("The frag number is %d\n", packet->total_frag);
+    printf("The frag number is %d\n", packet->frag_no);
 
 
 #endif
@@ -112,12 +111,16 @@ void extraction(char* msg_string, struct packet* packet) {
         packet->filedata[i - 1] = msg_string[ext_counter + i];
 
 
-    }
+   }
+    
+    
+    //memcpy(packet->filedata,msg_string+ext_counter+1,packet->size);
+    
 #ifdef DEBUG
-    printf("The content of the file is ");
-    for(i = 0 ; i < packet->size;i++)
-    printf("%c", packet->filedata[i]);
-    printf("\n");
+    //printf("The content of the file is ");
+    //for(i = 0 ; i < packet->size;i++)
+    //printf("%c", packet->filedata[i]);
+    //printf("\n");
 #endif
 
 
