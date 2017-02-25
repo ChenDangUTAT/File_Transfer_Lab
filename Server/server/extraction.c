@@ -53,7 +53,7 @@ void extraction(char* msg_string, struct packet* packet) {
 
 #ifdef DEBUG
 
-    printf("The frag number is %d\n", packet->total_frag);
+    printf("The frag number is %d\n", packet->frag_no);
 
 
 #endif

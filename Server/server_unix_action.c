@@ -210,7 +210,7 @@ int server_unix_action(int* udp_socket) {
         free(packet.filename);
 
 
-    } while (ACK + 1 != packet.total_frag);
+    } while (ACK != packet.total_frag);
 
 	// rename with the last packet and close
 
