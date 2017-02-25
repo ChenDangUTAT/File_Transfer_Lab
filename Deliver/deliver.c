@@ -120,10 +120,12 @@ int main(int argc,char *argv[]){
 	// you have to initalize the msg
 	char* recvMsg = malloc(sizeof(char) * 1024);
 
-	
+	int resendTimes = 0;
 	/*----------set up the testPack, and send the first byte of data-----------*/
 	while(totalSize >0){
   		
+
+ 
       int msgLen = 0;
 		char* msg = processMsg(&totalSize,&testPacket,totalFile,&msgLen);
 	
@@ -137,30 +139,57 @@ int main(int argc,char *argv[]){
 
 
 		struct sockaddr from;
+		
 
+      fd_set readfds;
+      struct timeval tv;
+      int number = 0;
+
+      //claear the set
+      FD_ZERO(&readfds); 
+		//set socket descriptor
+      FD_SET(socDesc,&readfds);
+
+      tv.tv_usec = 1.2; 
 		// define a clock to track the time
 		clock_t begin = clock();
+      //select a result
+      int rv = select(number,&readfds, NULL,NULL,&tv);
 
+      if(rv  == -1) 
+			perror("select");
+      else if(rv == 0){
+			printf("Time out occurred, gg\n");
+         totalSize += testPacket.size;
+         if(resendTimes<4)
+            resendTimes ++;
+         else{
+				printf("gg\n");	
+				break;
+			}
+      }
+      else{
+			bytes_receive = recvfrom(socDesc,recvMsg,1000,0, &from, &fromLen);
+			clock_t end = clock();
 
-		bytes_receive = recvfrom(socDesc,recvMsg,1000,0, &from, &fromLen);
-		clock_t end = clock();
-
-		float time_spent = (float)(end - begin) / CLOCKS_PER_SEC;
+			float time_spent = (float)(end - begin) / CLOCKS_PER_SEC;
 		
-		printf("%f\n",time_spent);
+			printf("%f\n",time_spent);
 
-	 
-		printf("%s",recvMsg);
-		printf("The received byte is %d\n", bytes_receive);
+		 
+			printf("%s",recvMsg);
+			printf("The received byte is %d\n", bytes_receive);
 
-		// check if the return msg is yes,
-		if(strstr( recvMsg, "ACK") !=NULL){
-			printf("A file transfer can start\n");
+			// check if the return msg is yes,
+			if(strstr( recvMsg, "ACK") !=NULL){
+				printf("A file transfer can start\n");
 		
-		}
-		else{
-			printf("not succeed");
-		}
+			}
+			else{
+				printf("timeout");
+		      totalSize += testPacket.size;
+			}
+     }
 }
 	// close the connection
 	close(socDesc);
@@ -182,7 +211,7 @@ char * processFile(char* fileName, struct packet* testPack, int *totalSize){
    // get the size of file
    *totalSize = st.st_size; 
    f = fopen(fileName, "rb");
-   printf("%d\n", *totalSize);
+   //printf("%d\n", *totalSize);
    char* totalFile = malloc(sizeof(char) *(*totalSize+1));
   
 	//read the file contents into buffer
@@ -190,9 +219,9 @@ char * processFile(char* fileName, struct packet* testPack, int *totalSize){
 
 
    // set the attribute of testPack
-   printf("%s\n",totalFile);
+   //printf("%s\n",totalFile);
 	testPack->total_frag = ceil(((double)*totalSize /1000));
-   printf("%d\n",testPack->total_frag);
+   //printf("%d\n",testPack->total_frag);
    testPack->frag_no =  0;
    testPack->size = (unsigned int) *totalSize; 
    testPack->filename  = fileName; 
@@ -241,6 +270,7 @@ char * processMsg(int* totalSize,struct packet* testPack,const char* totalFile, 
 		*len += testPack->size;
 		
       free(temp);
-		printf("%s\n",msg);
+		//printf("%s\n",msg);
 		return msg;
 }
+
