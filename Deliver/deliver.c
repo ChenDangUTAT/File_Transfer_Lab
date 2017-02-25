@@ -1,7 +1,7 @@
 #include "deliver.h"
 
 char * processFile(char* fileName, struct packet* testPack, int *totalSize);
-char * processMsg(int* totalSize,struct packet* testPack,const char* totalFile);
+char * processMsg(int* totalSize,struct packet* testPack,const char* totalFile, int *len);
 
 int main(int argc,char *argv[]){
 	// want to check the two inputs
@@ -124,10 +124,11 @@ int main(int argc,char *argv[]){
 	/*----------set up the testPack, and send the first byte of data-----------*/
 	while(totalSize >0){
   		
-		char* msg = processMsg(&totalSize,&testPacket,totalFile);
+      int msgLen = 0;
+		char* msg = processMsg(&totalSize,&testPacket,totalFile,&msgLen);
 	
 		//send the bytes 
-		bytes_send = sendto(socDesc, msg, strlen(msg)+1,0,res->ai_addr,sizeof(struct sockaddr_storage ));
+		bytes_send = sendto(socDesc, msg, msgLen,0,res->ai_addr,sizeof(struct sockaddr_storage ));
 
 	
 		// receive the message?
@@ -153,7 +154,7 @@ int main(int argc,char *argv[]){
 		printf("The received byte is %d\n", bytes_receive);
 
 		// check if the return msg is yes,
-		if(strcmp( recvMsg, "Yes") == 0){
+		if(strstr( recvMsg, "ACK") !=NULL){
 			printf("A file transfer can start\n");
 		
 		}
@@ -200,7 +201,7 @@ char * processFile(char* fileName, struct packet* testPack, int *totalSize){
    return totalFile;
  }  
 // process and return the new msg 
-char * processMsg(int* totalSize,struct packet* testPack,const char* totalFile){
+char * processMsg(int* totalSize,struct packet* testPack,const char* totalFile, int* len){
 
  		char* msg= malloc(sizeof(char)*1048);
 		
@@ -231,8 +232,13 @@ char * processMsg(int* totalSize,struct packet* testPack,const char* totalFile){
 		strcat(msg,":");
 		strcat(msg,testPack->filename);
 		strcat(msg,":");
-		strcat(msg,testPack->filedata);
-		
+      // get the message length
+      *len = strlen(msg);
+
+      // memory copy the correspondent file
+      memcpy(msg+*len, testPack->filedata, testPack->size);
+		//strcat(msg,testPack->filedata);
+		*len += testPack->size;
 		
       free(temp);
 		printf("%s\n",msg);
