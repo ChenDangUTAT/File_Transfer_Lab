@@ -1,4 +1,5 @@
 #include "deliver.h"
+#include <sys/poll.h>
 
 char * processFile(char* fileName, struct packet* testPack, int *totalSize);
 char * processMsg(int* totalSize,struct packet* testPack,const char* totalFile, int *len);
@@ -121,6 +122,15 @@ int main(int argc,char *argv[]){
 	char* recvMsg = malloc(sizeof(char) * 1024);
 
 	int resendTimes = 0;
+
+
+   
+   struct pollfd fd;
+	int ret;
+
+	fd.fd = socDesc; // your socket handler 
+	fd.events = POLLIN;
+	
 	/*----------set up the testPack, and send the first byte of data-----------*/
 	while(totalSize >0){
   		
@@ -140,34 +150,22 @@ int main(int argc,char *argv[]){
 
 		struct sockaddr from;
 		
-
-      fd_set readfds;
-      struct timeval tv;
-      int number = 0;
-
-      //claear the set
-      FD_ZERO(&readfds); 
-		//set socket descriptor
-      FD_SET(socDesc,&readfds);
-
-      tv.tv_usec = 1.2; 
 		// define a clock to track the time
 		clock_t begin = clock();
       //select a result
-      int rv = select(number,&readfds, NULL,NULL,&tv);
-
-      if(rv  == -1) 
-			perror("select");
-      else if(rv == 0){
-			printf("Time out occurred, gg\n");
-         totalSize += testPacket.size;
-         if(resendTimes<4)
-            resendTimes ++;
-         else{
-				printf("gg\n");	
+      
+		ret = poll(&fd, 1, 1); // 1 second for timeout
+      if(ret < 0){
+			perror("error\n");
+		}
+		else if (ret ==0) {
+			 perror("timeout gg\n");
+          totalSize += testPacket.size;
+          if(resendTimes <4)
+				resendTimes++;
+			 else
 				break;
-			}
-      }
+		}
       else{
 			bytes_receive = recvfrom(socDesc,recvMsg,1000,0, &from, &fromLen);
 			clock_t end = clock();
@@ -187,7 +185,6 @@ int main(int argc,char *argv[]){
 			}
 			else{
 				printf("timeout");
-		      totalSize += testPacket.size;
 			}
      }
 }
