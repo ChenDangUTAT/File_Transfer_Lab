@@ -10,12 +10,8 @@
 #define UDP_PORT_HIGH_RANGE 65535
 
 // other common headers
-
-#include <stdio.h>
-#include <string.h>
 #include <ctype.h>
 #include <stdbool.h>
-#include <stdlib.h>
 #include <stddef.h>
 
 // seperate the header for compatability
